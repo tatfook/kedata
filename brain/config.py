@@ -1,0 +1,6 @@
+
+REPO_LOC 
+GITLAB_TOKEN 
+ES_LOC = 'http://10.28.18.7:9200'
+TIME_ZONE = 'Asia/Shanghai'
+DEFAULT_STORAGE_CLASS = 'GitlabEsStorage'

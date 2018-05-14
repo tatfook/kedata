@@ -5,52 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.conf import settings
 
-import json
-import yaml
-import requests
-from datetime import date, datetime
-
-
-
 from rest_framework import viewsets
-
-
-
-#TODO: init_time cannot be updated
-
-
-# class UserViewSet(viewsets.ReadOnlyModelViewSet):
-#     """
-#     This viewset automatically provides `list` and `detail` actions.
-#     """
-#     queryset = User.objects.all()
-#     serializer_class = UserSerializer
-
-
-
-
-# class SnippetViewSet(viewsets.ViewSet):
-#     """
-#     This viewset automatically provides `list`, `create`, `retrieve`,
-#     `update` and `destroy` actions.
-
-#     Additionally we also provide an extra `highlight` action.
-#     """
-#     mind = Mind('leon') #TODO:
-#     queryset = mind.get_snippets()#Snippet.objects.all()
-#     serializer_class = SnippetSerializer
-#     # permission_classes = (permissions.IsAuthenticatedOrReadOnly,
-#     #                      IsOwnerOrReadOnly,)
-
-#     # @action(detail=True, renderer_classes=[renderers.StaticHTMLRenderer])
-#     # def widget_display(self, request, *args, **kwargs):
-#     #     snippet = self.get_object()
-#     #     return Response(snippet.highlighted)
-
-#     def perform_create(self, serializer):
-#         # serializer.save(owner=self.request.user) 
-#         serializer.save()    
-
 
 from brain.snippet import Snippet
 from brain.mind import Mind
@@ -112,12 +67,6 @@ class SnippetDetail(APIView):
         snippet = self.get_object(username, pk)
         snippet.discard()
         return Response(status=status.HTTP_204_NO_CONTENT)        
-
-
-
-
-    
-
 
 
 

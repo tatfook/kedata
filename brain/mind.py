@@ -101,3 +101,4 @@ if __name__ == '__main__':
     print('s3:', s3)  
     snippets = mind.get_snippets()
     print('snippets:', snippets)        
+    

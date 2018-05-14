@@ -243,3 +243,4 @@ class GitlabEsStorage(Storage):
                         res_dict = GitlabEsStorage.es.delete(index=self.get_es_index_name(), doc_type=GitlabEsStorage.es_doc_type, id=str(id))
                         print('hook for modifying snippet result:', res_dict)                        
         return project_id
+

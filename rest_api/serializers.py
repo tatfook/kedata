@@ -45,3 +45,4 @@ class SnippetSerializer(serializers.Serializer):
         instance.init_time = validated_data.get('init_time', instance.init_time)
         instance.save()
         return instance
+        

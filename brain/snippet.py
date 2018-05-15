@@ -13,6 +13,9 @@ from brain.config import *
 from brain.storage import *
 
 
+log = getlogger(__name__)
+
+
 #TODO: es field mapping
 #TODO:logger
   

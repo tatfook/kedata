@@ -13,6 +13,7 @@ from elasticsearch import Elasticsearch
 
 from brain.config import *
 
+log = getlogger(__name__)
 
 
 def get_current_year():
@@ -72,19 +73,19 @@ class GitlabEsStorage(Storage):
         res_dict = GitlabEsStorage.es.get(index='ke', doc_type='user_data_loc', id=self.username)       
         try:
              if res_dict['found'] == False:
-                print('No gitlab project for user ', self.username, ' is found!')
+                log.info('No gitlab project for user %s is found!', self.username)
                 return 
              else:
                 proj_id = res_dict['_source']['proj_id']
                 return proj_id
         except IndexError:
-            print('No gitlab project for user ', self.username, ' is found!')
+            log.error('No gitlab project for user %s is found!', self.username)
 
 
     #TODO: support different gitlab urls
     def set_gitlab_proj_id(self, proj_id):        
         GitlabEsStorage.es.index(index='ke', doc_type='user_data_loc', id=self.username, body={'proj_id':str(proj_id)})
-        print('Succesfully added user gitlab mapping')
+        log.info('Succesfully added user gitlab mapping!')
 
 
     def _get_gitlab_proj(self):
@@ -95,7 +96,7 @@ class GitlabEsStorage(Storage):
                 self._proj = gl.projects.get(proj_id) 
                 return self._proj   
             except:
-                print('Error: failed to get the project!')  
+                log.error('Error: failed to get the project!')  
         return self._proj 
 
        
@@ -119,7 +120,7 @@ class GitlabEsStorage(Storage):
                       'branch': 'master',
                       'content': yaml.dump(kwargs, Dumper=Dumper),
                       'commit_message': 'Created a snippet'})
-        print('Succesfully created the snippet!')        
+        log.info('Succesfully created the snippet!')        
         self._f_dict[snippet_id] =  f
         #get_id() return path like snippets/18/id
         return f.get_id().split('/')[-1]
@@ -128,11 +129,11 @@ class GitlabEsStorage(Storage):
     def get_snippet(self, id):
         res_dict = GitlabEsStorage.es.get(index=self.get_es_index_name(), doc_type=GitlabEsStorage.es_doc_type, id=str(id))        
         if res_dict['found'] == False:
-            print('Snippet ', id, ' not found!')
+            log.info('Snippet %s not found', id)
             return 
         else:
             snippet = res_dict['_source']
-            print('snippet found:', snippet)
+            log.info('snippet found: %s', snippet)
             return snippet
 
 
@@ -173,7 +174,7 @@ class GitlabEsStorage(Storage):
     def delete_snippet(self, id):
         f = self._get_f(id)
         f.delete(branch='master', commit_message='Delete the snippet')
-        print('Snippet ', id, ' succesfully deleted!')
+        log.info('Snippet %s  succesfully deleted!', id)
 
 
     def update_snippet(self, id, kwargs):
@@ -185,8 +186,7 @@ class GitlabEsStorage(Storage):
     def _get_f(self, id):
         if hasattr(self, '_f_dict') and self._f_dict.get(id):
             return self._f_dict.get(id)    
-        else:    
-            print('file:', GitlabEsStorage.get_snippet_gitlab_path()+str(id))
+        else:
             f = self._get_gitlab_proj().files.get(file_path=GitlabEsStorage.get_snippet_gitlab_path()+str(id), ref='master')    
             self._f_dict[id] = f
             return f
@@ -210,8 +210,8 @@ class GitlabEsStorage(Storage):
         This should be used in a http server to implement the gitlab web hook to be used 
         """
         project_id = push_event.get('project_id', 0)
-        print('Event is for project:', project_id)                
-        print('username for this project:', self.username)        
+        log.info('Received event for project %s', project_id)                
+        log.info('Username for this project: %s', self.username)        
         project_url = push_event['project']['http_url']
         commits = push_event['commits']
         proj = self._get_gitlab_proj()
@@ -222,10 +222,11 @@ class GitlabEsStorage(Storage):
                     path = item
                     f = proj.files.get(file_path=path, ref='master')  #TODO:get file of the commit                    
                     content = f.decode().decode("utf-8")  #TODO:
+                    log.debug('Content of the file obtained from gitlab: %s', content)
                     id = path.split('/')[-1] #TODO: fet id from the content
                     if path.startswith('snippets/'):
                        res_dict = GitlabEsStorage.es.index(index=self.get_es_index_name(), doc_type=GitlabEsStorage.es_doc_type, id=str(id), body=yaml.load(content))
-                       print('hook for add snippet result:', res_dict)
+                       log.debug('hook for add snippet result: %s', res_dict)
             if commit['modified']:
                 for item in commit['modified']:
                     path = item
@@ -234,13 +235,13 @@ class GitlabEsStorage(Storage):
                     id = path.split('/')[-1] 
                     if path.startswith('snippets/'):
                         res_dict = GitlabEsStorage.es.index(index=self.get_es_index_name(), doc_type=GitlabEsStorage.es_doc_type, id=str(id), body=yaml.load(content))
-                        print('hook for modifying snippet result:', res_dict)
+                        log.debug('hook for modifying snippet result: %s', res_dict)
             if commit['removed']:
                 for item in commit['removed']:
                     path = item                    
                     if path.startswith('snippets/'):
                         id = path.split('/')[-1] 
                         res_dict = GitlabEsStorage.es.delete(index=self.get_es_index_name(), doc_type=GitlabEsStorage.es_doc_type, id=str(id))
-                        print('hook for modifying snippet result:', res_dict)                        
+                        log.debug('hook for modifying snippet result: %s', res_dict)                        
         return project_id
 

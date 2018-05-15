@@ -55,3 +55,7 @@ coverage.xml
 *.log
 db.sqlite3
 
+
+# github stuff:
+.github/
+

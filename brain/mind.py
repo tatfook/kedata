@@ -7,6 +7,8 @@ from brain.snippet import *
 from brain.storage import *
 
 
+log = getlogger(__name__)
+
 class Mind:
     """
     Mind can be stored on any kind of substance. More type of storage will be supported, for example gitlab hosted project files with search provided with es, 

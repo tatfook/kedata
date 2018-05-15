@@ -216,7 +216,6 @@ class GitlabEsStorage(Storage):
         commits = push_event['commits']
         proj = self._get_gitlab_proj()
         for commit in commits:
-            #TODO:modified and removed
             if commit['added']:
                 for item in commit['added']:
                     path = item

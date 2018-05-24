@@ -8,7 +8,7 @@ For more detail, see  http://.../knowledge_engine/basic_concepts
 """
 
 
-
+# from brain.base import *
 from brain.config import *
 from brain.storage import *
 
@@ -27,7 +27,8 @@ class Snippet:
 
     #update_time should always be the currrent time
     #some fields should in get but not in put and post
-    fields = ['desc', 'vote', 'private', 'title', 'url', 'tags', 'context', 'attachment', 'init_time', 'update_time']    
+    primary_key = 'id'
+    fields = ('desc', 'vote', 'private', 'title', 'url', 'tags', 'context', 'attachment', 'init_time', 'update_time')
     
     def __init__(self, username, id, desc, vote=0, tags=None, private=False, title="", attachment=None, url=None, chilren=None, context=None, init_time=None, update_time=None):         
         """ 
@@ -66,11 +67,12 @@ class Snippet:
 
     @classmethod
     def clean_fields(cls, sn_dict):
-        d = {}
-        for key, value in sn_dict.items():
-            if key in Snippet.fields:
-                d[key] = value
-        return d         
+        # d = {}
+        # for key, value in sn_dict.items():
+        #     if key in Snippet.fields:
+        #         d[key] = value
+        # return d 
+        return {key:value for key, value in sn_dict.items() if key in Snippet.fields}        
 
     def __repr__(self):
         return "<Snippet: %s>" % Snippet.clean_fields(self.__dict__)

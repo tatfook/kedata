@@ -28,9 +28,9 @@ class Snippet:
     #update_time should always be the currrent time
     #some fields should in get but not in put and post
     primary_key = 'id'
-    fields = ('desc', 'vote', 'private', 'title', 'url', 'tags', 'context', 'attachment', 'init_time', 'update_time')
+    fields = ('desc', 'vote', 'private', 'title', 'url', 'tags', 'context', 'attachment', 'children', 'init_time', 'update_time')
     
-    def __init__(self, username, id, desc, vote=0, tags=None, private=False, title="", attachment=None, url=None, chilren=None, context=None, init_time=None, update_time=None):         
+    def __init__(self, username, id, desc, vote=0, tags=None, private=False, title="", attachment=None, url=None, children=None, context=None, init_time=None, update_time=None):         
         """ 
         You are supposed to create and get a snippet only from Mind class instead of instantiate a Snippet instance directly.
         This constructor is used to convert a dict to a Snippet instance
@@ -49,6 +49,7 @@ class Snippet:
         self.attachment = attachment
         self.init_time = init_time
         self.update_time = update_time
+        self.children = children
         self.in_frames = self.get_in_frames()  
         #search and get annots from es TODO:
         #self.annots = sn_dict.get('annot'
@@ -72,7 +73,7 @@ class Snippet:
         #     if key in Snippet.fields:
         #         d[key] = value
         # return d 
-        return {key:value for key, value in sn_dict.items() if key in Snippet.fields}        
+        return {key:value for key, value in sn_dict.items() if key in cls.fields}        
 
     def __repr__(self):
         return "<Snippet: %s>" % Snippet.clean_fields(self.__dict__)

@@ -150,7 +150,7 @@ class TestTag(unittest.TestCase):
         #wait for es to get updated
         time.sleep(6)        
         self.assertRaises(Tag.DoesNotExist, self.mind.get_tag, self.tag_name)
-        # self.mind.remove_testing_tags()
+        self.mind.remove_testing_tags()
 
     
 

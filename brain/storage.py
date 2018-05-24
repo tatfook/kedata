@@ -134,16 +134,19 @@ class GitlabEsStorage(Storage):
         """
 
         """     
-        snippet_id = str(self.get_snippet_id())
+        snippet_id = str(self.get_snippet_id())        
+        log.info('About to create snippet of id: %s', snippet_id)
         f = self._get_gitlab_proj().files.create({'file_path': GitlabEsStorage.get_snippet_gitlab_path()+snippet_id, #TODO: year
                       'branch': 'master',
                       'content': yaml.dump(kwargs, Dumper=Dumper),
                       'commit_message': 'Created a snippet'})
         log.info('Succesfully created the snippet!')        
-        self._f_dict[snippet_id] =  f
+        # self._f_dict[snippet_id] =  f
         #get_id() return path like snippets/18/id
         #we want snippet id to be integers #TODO:change other places
-        return int(f.get_id().split('/')[-1])
+        created_snippet_id = int(f.get_id().split('/')[-1])
+        log.info('The snippet %s is successfully created!', created_snippet_id)
+        return created_snippet_id
 
 
     def create_tag(self, **kwargs):        
@@ -199,22 +202,23 @@ class GitlabEsStorage(Storage):
 
     def get_snippets(self, q='', tag_name=None, cache_id=None, order_by="init_date"):
         #TODO:implement getting notes by cache_id and by q
-        if not (q or tag_name or cache_id):                
-                res_dict = GitlabEsStorage.es.search(index=self.get_es_index_name(), doc_type=GitlabEsStorage.es_doc_type)                     
-                def _update(sn_dict, id):
-                    sn_dict.update({'id':id})
-                    return sn_dict
-                return [] if res_dict['hits']['total'] == 0 else [_update(hit['_source'], hit['_id']) for hit in res_dict['hits']['hits']]  
-                #below is the same as be above, but maybe more readable
-                # if res_dict['hits']['total'] == 0:                                           
-                #     return []
-                # else:
-                #     hits = res_dict['hits']['hits']
-                #     snippets = []
-                #     for hit in hits:
-                #         hit['_source']['id'] = hit['_id']
-                #         snippets.append(hit['_source'])
-                #     return snippets
+        if not (q or tag_name or cache_id):    
+            #TODO:get all snippets, not just 20.             
+            res_dict = GitlabEsStorage.es.search(index=self.get_es_index_name(), doc_type=GitlabEsStorage.es_doc_type)                     
+            def _update(sn_dict, id):
+                sn_dict.update({'id':id})
+                return sn_dict
+            return [] if res_dict['hits']['total'] == 0 else [_update(hit['_source'], hit['_id']) for hit in res_dict['hits']['hits']]  
+            #below is the same as be above, but maybe more readable
+            # if res_dict['hits']['total'] == 0:                                           
+            #     return []
+            # else:
+            #     hits = res_dict['hits']['hits']
+            #     snippets = []
+            #     for hit in hits:
+            #         hit['_source']['id'] = hit['_id']
+            #         snippets.append(hit['_source'])
+            #     return snippets
 
     #TODO:search of tags
     def get_tags(self):
@@ -565,6 +569,6 @@ class GitlabEsStorage(Storage):
                     if path.startswith('snippets/'):
                         id = path.split('/')[-1] 
                         res_dict = GitlabEsStorage.es.delete(index=self.get_es_index_name(), doc_type=GitlabEsStorage.es_doc_type, id=str(id))
-                        log.debug('hook for modifying snippet result: %s', res_dict)                        
+                        log.debug('hook for removing snippet result: %s', res_dict)                        
         return project_id
 

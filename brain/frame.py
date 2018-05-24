@@ -1,15 +1,15 @@
 
-class Frame:
+
+from brain.config import *
+from brain.storage import *
+
+class Frame(Snippet):
+
+    primary_key = 'id'
+    fields = ('desc', 'vote', 'private', 'title', 'tags', 'attachment', 'init_time', 'update_time')
        
 
     
-    def __init(self, snippet):
-        self.snippet = snippet
-        self.children = snippet.children
-        self.title = self.title
-        #...
-
-
     def add_children(self):
         pass
 

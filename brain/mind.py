@@ -132,46 +132,77 @@ class Mind:
         pass
 
 
+    def remove_testing_tags(self):        
+        ts = self.get_tags()
+        print('tags:', [t.name for t in ts])
+        for tag in ts:
+            if 'test' in tag.name:
+                tag.discard()
+        time.sleep(6)        
+        ts_new = self.get_tags()    
+        print('tags after removing testing tags:', [t.name for t in ts_new])
+
+
 
 
 
 
 if __name__ == '__main__':
+    """
+    Example:
+        * python -m brain.mind remove_testing_tags
+        * python -m brain.mind create_tag testupdatetagwork
+        * python -m brain.mind update_tag_name testupdatetagwork testupdatetagworking
+        * python -m brain.mind remove_testing_tags
+        * python -m brain.mind
+    """
+    import sys
     mind = Mind('leon')
-    # sid = mind.create_snippet(desc='Programming language is similar to spoken language', vote=2, tags=['language'], private=False, title="", attachment=None, url="https://git-scm.com/book/en/v7", chilren=None, context=None)
-    # time.sleep(6)
-    # s1 = mind.get_snippet(sid)
-    # print('s1:', s1)               
-    # s1.desc = 'Programming language is similar to spoken language!'
-    # s1.save()  
-    # #wait for es to be updated
-    # import time
-    # time.sleep(6)
-    # s2 = mind.get_snippet(sid)
-    # print('s2:', s2)  
-    # snippets = mind.get_snippets()
-    # print('snippets:', snippets)   
-    import random
-    tag_name = mind.create_tag(name='testingtag'+str(random.randint(0, 10000)), desc='This is just a random tag for testing', private=False)       
-    print('Tag %s created!', tag_name)
-    time.sleep(6)
-    t = mind.get_tag(tag_name)
-    # new_name = 'testingtag'+str(random.randint(0, 10000))
-    # t.name = new_name
-    t.desc = 'Tagging is ok!'        
-    t.private = True        
-    t.save()
-    #wait for es update
-    time.sleep(6)
-    updated_t = mind.get_tag(tag_name)        
-    print('Tag updated:', updated_t.desc)
-    updated_t.discard()
-    time.sleep(6)
-    ts = mind.get_tags()
-    for tag in ts:
-        if 'test' in tag.name:
-            tag.discard()
-
+    if len(sys.argv) == 1:
+        # sid = mind.create_snippet(desc='Programming language is similar to spoken language', vote=2, tags=['language'], private=False, title="", attachment=None, url="https://git-scm.com/book/en/v7", chilren=None, context=None)
+        # time.sleep(6)
+        # s1 = mind.get_snippet(sid)
+        # print('s1:', s1)               
+        # s1.desc = 'Programming language is similar to spoken language!'
+        # s1.save()  
+        # #wait for es to be updated
+        # import time
+        # time.sleep(6)
+        # s2 = mind.get_snippet(sid)
+        # print('s2:', s2)  
+        # snippets = mind.get_snippets()
+        # print('snippets:', snippets)   
+        import random
+        tag_name = mind.create_tag(name='testingtag'+str(random.randint(0, 10000)), desc='This is just a random tag for testing', private=False)       
+        print('Tag %s created!', tag_name)
+        time.sleep(6)
+        t = mind.get_tag(tag_name)
+        # new_name = 'testingtag'+str(random.randint(0, 10000))
+        # t.name = new_name
+        t.desc = 'Tagging is ok!'        
+        t.private = True        
+        t.save()
+        #wait for es update
+        time.sleep(6)
+        updated_t = mind.get_tag(tag_name)        
+        print('Tag updated:', updated_t.desc)
+        updated_t.discard()
+        time.sleep(6)
+        mind.remove_testing_tags()
+    else:
+        command = sys.argv[1]
+        if command == 'remove_testing_tags':
+            mind.remove_testing_tags()
+        elif command == 'create_tag':
+            name = sys.argv[2]
+            mind.create_tag(name=name)    
+        elif command == 'update_tag_name':
+            old_name = sys.argv[2]
+            new_name = sys.argv[3]
+            mind.update_tag_name(old_name, new_name)    
+                    
+        
+        
 
         
     

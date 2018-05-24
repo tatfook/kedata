@@ -413,7 +413,7 @@ class GitlabEsStorage(Storage):
                 snippet_ids.append(hit['_id'])     
 
             for snippet_id in snippet_ids:
-                f = self._get_f(snippet_id)
+                f = self._get_f(snippet_id)                
                 sn = f.decode().decode("utf-8")
                 snippet = yaml.load(sn)
                 snippet['tags'] =  list(map(lambda a: a if a!=name else new_name, snippet['tags']))                    
@@ -433,11 +433,11 @@ class GitlabEsStorage(Storage):
 
     def _get_f(self, id):
         #TODO:remove caching
-        if hasattr(self, '_f_dict') and self._f_dict.get(id):
-            return self._f_dict.get(id)    
-        else:
+        # if hasattr(self, '_f_dict') and self._f_dict.get(id):
+        #     return self._f_dict.get(id)    
+        # else:
             f = self._get_gitlab_proj().files.get(file_path=GitlabEsStorage.get_snippet_gitlab_path()+str(id), ref='master')    
-            self._f_dict[id] = f
+            # self._f_dict[id] = f
             return f
 
     def _get_tags_f(self):
@@ -498,7 +498,11 @@ class GitlabEsStorage(Storage):
                         # Get the diff for a commit
                         diff = actual_commit.diff()                                           
                         log.debug('Commit diff: %s', diff)
-                        patch = PatchSet(diff[0]['diff'])
+                        #the actual_commit might have items related to those updated snippets as well since it ask for the commit directly. So we need to get the tags change out
+                        # and ignore snippets change from this actual_commit since the info is already in the push event
+                        tags_diff = [d for d in diff if d['old_path'] == 'tags'][0]
+                        # patch = PatchSet(diff[0]['diff'])
+                        patch = PatchSet(tags_diff['diff'])
                         #there shall be only one changed file, which is "tags" file
                         modified_file = patch.modified_files[0]
                         #there shall be only one place of change

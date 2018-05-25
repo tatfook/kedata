@@ -18,6 +18,7 @@ class SnippetSerializer(serializers.Serializer):
     url = serializers.URLField(required=False, allow_null=True)
     tags = serializers.ListField(default=[])
     attachment = serializers.CharField(required=False, allow_null=True)    
+    children = serializers.ListField(default=[])
     # context = 
     in_frames = serializers.ListField(read_only=True, required=False, source='get_in_frames')    
     # annots = serializers.CharField(read_only=True, required=False)     
@@ -45,6 +46,7 @@ class SnippetSerializer(serializers.Serializer):
         instance.url = validated_data.get('url', instance.url)
         instance.tags = validated_data.get('tags', instance.tags)
         instance.attachment = validated_data.get('attachment', instance.attachment)
+        instance.children = validated.get('children', instance.children)
         instance.init_time = validated_data.get('init_time', instance.init_time)
         instance.save()
         return instance
@@ -87,4 +89,48 @@ class TagSerializer(serializers.Serializer):
             log.info('Updating the tag...')
             #name is not in the post data. 
             instance.save()    
+        return instance
+
+
+
+class FrameSerializer(SnippetSerializer):
+    id = serializers.IntegerField(read_only=True)
+    title = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    desc = serializers.CharField(style={'base_template': 'textarea.html'})
+    vote = serializers.IntegerField(required=True)    
+    private = serializers.BooleanField(default=False ) #TODO: default    
+    tags = serializers.ListField(default=[])
+    attachment = serializers.CharField(required=False, allow_null=True)    
+    children = serializers.ListField(default=[])
+    in_frames = serializers.ListField(read_only=True, required=False, source='get_in_frames')    
+    # annots = serializers.CharField(read_only=True, required=False)     
+    init_time = serializers.DateTimeField(read_only=True, default=datetime.now().isoformat(), initial=datetime.now().isoformat())
+    update_time = serializers.DateTimeField(read_only=True, default=datetime.now().isoformat(), initial=datetime.now().isoformat())
+
+
+
+    def create(self, validated_data):
+        """
+        Create and return a new `Frame` instance, given the validated data.
+        """
+        log.info('creating a new frame...')
+        username = self.context.get('username')
+        mind = Mind(username) #TODO:
+        log.debug('validated_data: %s', validated_data)
+        return mind.create_frame(**validated_data)
+
+    def update(self, instance, validated_data):
+        """
+        Update and return an existing `Snippet` instance, given the validated data.
+        """
+        instance.title = validated_data.get('title', instance.title)
+        instance.desc = validated_data.get('desc', instance.desc)
+        instance.vote = validated_data.get('vote', instance.vote)
+        instance.private = validated_data.get('private', instance.private)        
+        # instance.url = validated_data.get('url', instance.url)
+        instance.tags = validated_data.get('tags', instance.tags)
+        instance.attachment = validated_data.get('attachment', instance.attachment)
+        instance.children = validated.get('children', instance.children)
+        instance.init_time = validated_data.get('init_time', instance.init_time)
+        instance.save()
         return instance

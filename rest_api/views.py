@@ -17,7 +17,7 @@ from brain.tag import Tag
 from brain.mind import Mind
 from brain.storage import GitlabEsStorage
 from brain.config import getlogger
-from .serializers import SnippetSerializer, TagSerializer
+from .serializers import SnippetSerializer, TagSerializer, FrameSerializer
 
 log = getlogger(__name__)
 
@@ -27,13 +27,13 @@ class SnippetList(APIView):
     List all snippets, or create a new snippet.
     """
 
-    def get(self, request, username, format=None):
+    def get(self, request, username, tag_name=None, format=None):
         mind = Mind(username)
-        snippets = mind.get_snippets()
+        snippets = mind.get_snippets(tag_name=tag_name, **request.GET.dict())
         serializer = SnippetSerializer(snippets, context={'username':username}, many=True)
         return Response(serializer.data)
 
-    def post(self, request, username, format=None):
+    def post(self, request, username, tag_name=None, format=None):
         serializer = SnippetSerializer(data=request.data, context={'username':username})
         if serializer.is_valid():
             serializer.save()
@@ -141,3 +141,53 @@ def gitlab_hook(request):
 
 
 
+
+class FrameList(APIView):
+    """
+    List all snippets, or create a new snippet.
+    """
+
+    def get(self, request, username, tag_name=None, format=None):
+        mind = Mind(username)
+        frames = mind.get_frames(tag_name=tag_name, **request.GET.dict())
+        serializer = FrameSerializer(frames, context={'username':username}, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, username, format=None):
+        serializer = FrameSerializer(data=request.data, context={'username':username})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class FrameDetail(APIView):
+    """
+    Retrieve, update or delete a snippet instance.
+    """                
+
+    def get_object(self, username, pk):        
+        mind = Mind(username)
+        try:                        
+            return mind.get_frame(pk)
+        except Snippet.DoesNotExist:
+            raise Http404
+
+    def get(self, request, username, pk, format=None):
+        frame = self.get_object(username, pk)
+        serializer = FrameSerializer(frame, context={'username':username})
+        return Response(serializer.data)
+
+    def put(self, request, username, pk, format=None):
+        frame = self.get_object(username, pk)
+        serializer = SnippetSerializer(frame, data=request.data, context={'username':username})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, username, pk, format=None):
+        frame = self.get_object(username, pk)
+        frame.discard()
+        return Response(status=status.HTTP_204_NO_CONTENT)       

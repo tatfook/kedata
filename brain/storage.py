@@ -11,6 +11,7 @@ from yaml import CLoader as Loader, CDumper as Dumper
 from pytz import timezone
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError as NotFoundInEsError
+from elasticsearch_dsl import Search
 from unidiff import PatchSet
 
 from brain.config import *
@@ -199,16 +200,25 @@ class GitlabEsStorage(Storage):
         res_dict = GitlabEsStorage.es.search(index=self.get_es_index_name(), doc_type=GitlabEsStorage.es_doc_type, body=query)              
         return [] if  res_dict['hits']['total'] == 0 else  [hit['_id'] for hit in res_dict['hits']['hits']]
 
+   
+    def _update(self, sn_dict, id):
+        sn_dict.update({'id':id})
+        return sn_dict
+
 
     def get_snippets(self, q='', tag_name=None, cache_id=None, order_by="init_date"):
-        #TODO:implement getting notes by cache_id and by q
-        if not (q or tag_name or cache_id):    
-            #TODO:get all snippets, not just 20.             
-            res_dict = GitlabEsStorage.es.search(index=self.get_es_index_name(), doc_type=GitlabEsStorage.es_doc_type)                     
-            def _update(sn_dict, id):
-                sn_dict.update({'id':id})
-                return sn_dict
-            return [] if res_dict['hits']['total'] == 0 else [_update(hit['_source'], hit['_id']) for hit in res_dict['hits']['hits']]  
+        search = Search(using=GitlabEsStorage.es, index=self.get_es_index_name())
+        if q:
+            search = search.query("match", desc=q)
+        if tag_name:
+            search = search.query("match", tags=tag_name)    
+        r = search.execute()
+        return [self._update(hit['_source'], hit['_id']) for hit in r.hits.hits]        
+
+        # if not (q or tag_name or cache_id):    
+        #     #TODO:support pagination.             
+        #     res_dict = GitlabEsStorage.es.search(index=self.get_es_index_name(), doc_type=GitlabEsStorage.es_doc_type)                                 
+        #     return [] if res_dict['hits']['total'] == 0 else [self._update(hit['_source'], hit['_id']) for hit in res_dict['hits']['hits']]  
             #below is the same as be above, but maybe more readable
             # if res_dict['hits']['total'] == 0:                                           
             #     return []
@@ -219,6 +229,33 @@ class GitlabEsStorage(Storage):
             #         hit['_source']['id'] = hit['_id']
             #         snippets.append(hit['_source'])
             #     return snippets
+
+    def get_frames(self, q='', tag_name=None, cache_id=None, order_by="init_date"):
+        search = Search(using=GitlabEsStorage.es, index=self.get_es_index_name())
+        search = search.filter("exists", field="children")
+        if q:
+            search = search.query("match", desc=q)
+        if tag_name:
+            search = search.query("match", tags=tag_name)    
+        r = search.execute()
+        return [self._update(hit['_source'], hit['_id']) for hit in r.hits.hits]        
+        # if not (q or tag_name or cache_id):    
+        #     query = {
+        #                "query" : {
+        #                   "constant_score" : {
+        #                      "filter" : {
+        #                         "exists" : {
+        #                            "field" : "children"
+        #                         }
+        #                      }
+        #                   }
+        #                }
+        #             }
+        #     res_dict = GitlabEsStorage.es.search(index=self.get_es_index_name(), doc_type=GitlabEsStorage.es_doc_type, body=query)  
+        #     log.debug('results of searching for frames: %s', res_dict)            
+        #     return [] if res_dict['hits']['total'] == 0 else [self._update(hit['_source'], hit['_id']) for hit in res_dict['hits']['hits']] 
+
+
 
     #TODO:search of tags
     def get_tags(self):
@@ -275,6 +312,7 @@ class GitlabEsStorage(Storage):
         if res_dict['hits']['total'] != 0:                                                   
             hits = res_dict['hits']['hits']               
             snippet_ids = [hit['_id'] for hit in hits]
+            log.debug('The following snippets have the tag %s: %s ', name, snippet_ids)
             for snippet_id in snippet_ids:
                 f = self._get_f(snippet_id)
                 sn = f.decode().decode("utf-8")

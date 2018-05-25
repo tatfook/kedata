@@ -5,6 +5,7 @@ from datetime import datetime
 
 from brain.snippet import *
 from brain.tag import *
+from brain.frame import *
 from brain.storage import *
 
 
@@ -41,10 +42,19 @@ class Mind:
         kwargs['init_time'] = now
         # if not kwargs.get('update_time'):
         kwargs['update_time'] = now   
-        id = self.storage.create_snippet(**kwargs)        
-        # s = Snippet(self.username, id, **kwargs)        
+        id = self.storage.create_snippet(**kwargs)      
+        #Since there will be a delay for es to create this snippet after its creation in gitlab, here we
+        # just construct a Snippet to return to user to use, instead of letting user to call get_snippet
+        #immediately and get an Snippet.DoesNotExist error
+        s = Snippet(self.username, id, **kwargs)        
         # s.storage = self.storage
-        return id
+        return s
+
+    def create_frame(self, **kwargs):        
+        #TODO:check other fields
+        s = self.create_snippet(**Frame.clean_fields(kwargs))
+        f = Frame(self.username, s.id, **Frame.clean_fields(s.__dict__.copy()))
+        return f    
     
     def get_snippet(self, id): 
         """
@@ -67,13 +77,18 @@ class Mind:
         """
         Can get frames as well
         """
-        sns = self.storage.get_snippets(q='', tag_name=None, cache_id=None, order_by="init_date")                            
-        snippets = []
-        for sn in sns:
-            snippets.append(Snippet(self.username, **sn))
+        sns = self.storage.get_snippets(q=q, tag_name=tag_name, cache_id=cache_id, order_by=order_by)                            
+        log.debug('Snippets found:%s', sns)                         
+        snippets = [Snippet(self.username, **sn) for sn in sns]
         return snippets    
         # return SnippetList(snippets)
   
+    def get_frames(self,  q='', tag_name=None, cache_id=None, order_by="init_date"):
+        frs = self.storage.get_frames(q=q, tag_name=tag_name, cache_id=cache_id, order_by=order_by)   
+        log.debug('Frames found:%s', frs)                         
+        frames = [Frame(self.username, **fr) for fr in frs]
+        return frames
+
 
     @classmethod
     def display_snippets(cls, snippet, template="snippet.html", style="snippet_default.css"):
@@ -159,19 +174,19 @@ if __name__ == '__main__':
     import sys
     mind = Mind('leon')
     if len(sys.argv) == 1:
-        # sid = mind.create_snippet(desc='Programming language is similar to spoken language', vote=2, tags=['language'], private=False, title="", attachment=None, url="https://git-scm.com/book/en/v7", chilren=None, context=None)
-        # time.sleep(6)
-        # s1 = mind.get_snippet(sid)
-        # print('s1:', s1)               
-        # s1.desc = 'Programming language is similar to spoken language!'
-        # s1.save()  
-        # #wait for es to be updated
-        # import time
-        # time.sleep(6)
-        # s2 = mind.get_snippet(sid)
-        # print('s2:', s2)  
-        # snippets = mind.get_snippets()
-        # print('snippets:', snippets)   
+        s = mind.create_snippet(desc='Programming language is similar to spoken language', vote=2, tags=['language'], private=False, title="", attachment=None, url="https://git-scm.com/book/en/v7", chilren=None, context=None)
+        time.sleep(6)
+        s1 = mind.get_snippet(s.id)
+        print('s1:', s1)               
+        s1.desc = 'Programming language is similar to spoken language!'
+        s1.save()  
+        #wait for es to be updated
+        import time
+        time.sleep(6)
+        s2 = mind.get_snippet(s.id)
+        print('s2:', s2)  
+        snippets = mind.get_snippets()
+        print('snippets:', snippets)   
         import random
         tag_name = mind.create_tag(name='testingtag'+str(random.randint(0, 10000)), desc='This is just a random tag for testing', private=False)       
         print('Tag %s created!', tag_name)
